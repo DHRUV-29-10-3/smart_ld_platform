@@ -1,0 +1,250 @@
+from flask import Flask, render_template, request, redirect, session, url_for
+import mysql.connector
+from werkzeug.utils import secure_filename
+import os
+from dotenv import load_dotenv
+from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+
+load_dotenv()
+
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY")
+
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def connect_db():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME
+    )
+
+
+@app.route('/')
+def home():
+    return redirect('/register')
+
+
+# ------------------------ REGISTER ------------------------
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        role = request.form['role']
+        field = request.form['field']
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        if cursor.fetchone():
+            conn.close()
+            return "User already exists. <a href='/login'>Login here</a>"
+
+        cursor.execute("INSERT INTO users (name, email, password, role, field) VALUES (%s, %s, %s, %s, %s)",
+                       (name, email, password, role, field))
+        conn.commit()
+        conn.close()
+        return redirect('/login')
+
+    return render_template('register.html')
+
+
+# ------------------------ LOGIN ------------------------
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = connect_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            session['user'] = user
+            return redirect(f"/dashboard/{user['role']}")
+        return "Invalid credentials"
+    return render_template('login.html')
+
+
+# ------------------------ INSTRUCTOR DASHBOARD ------------------------
+@app.route('/dashboard/instructor', methods=['GET', 'POST'])
+def instructor_dashboard():
+    if 'user' not in session or session['user']['role'] != 'instructor':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        course_type = request.form['type']
+        file = request.files['file']
+        field = request.form['field']
+
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        else:
+            filename = None
+
+        cursor.execute(
+            "INSERT INTO courses (title, description, type, field, filename, instructor_id) VALUES (%s, %s, %s, %s, %s, %s)",
+            (title, description, course_type, field, filename, session['user']['id'])
+        )
+        conn.commit()
+
+    cursor.execute("SELECT * FROM courses WHERE instructor_id = %s", (session['user']['id'],))
+    courses = cursor.fetchall()
+    conn.close()
+    return render_template("instructor_dashboard.html", user=session['user'], courses=courses)
+
+
+# ------------------------ DELETE COURSE ------------------------
+@app.route('/delete_course/<int:course_id>')
+def delete_course(course_id):
+    if 'user' not in session or session['user']['role'] != 'instructor':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM courses WHERE id = %s AND instructor_id = %s",
+                   (course_id, session['user']['id']))
+    conn.commit()
+    conn.close()
+
+    return redirect('/dashboard/instructor')
+
+
+# ------------------------ EDIT COURSE ------------------------
+@app.route('/edit_course/<int:course_id>', methods=['GET', 'POST'])
+def edit_course(course_id):
+    if 'user' not in session or session['user']['role'] != 'instructor':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        course_type = request.form['type']
+        field = request.form['field']
+        file = request.files.get('file')
+
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            cursor.execute("""
+                UPDATE courses 
+                SET title=%s, description=%s, type=%s, field=%s, filename=%s 
+                WHERE id=%s AND instructor_id=%s
+            """, (title, description, course_type, field, filename, course_id, session['user']['id']))
+        else:
+            cursor.execute("""
+                UPDATE courses 
+                SET title=%s, description=%s, type=%s, field=%s 
+                WHERE id=%s AND instructor_id=%s
+            """, (title, description, course_type, field, course_id, session['user']['id']))
+
+        conn.commit()
+        conn.close()
+        return redirect('/dashboard/instructor')
+
+    cursor.execute("SELECT * FROM courses WHERE id = %s AND instructor_id = %s", 
+                   (course_id, session['user']['id']))
+    course = cursor.fetchone()
+    conn.close()
+
+    if not course:
+        return "❌ Course not found or unauthorized access."
+
+    return render_template("edit_course.html", course=course)
+
+
+# ------------------------ ADMIN DASHBOARD ------------------------
+@app.route('/dashboard/admin', methods=['GET', 'POST'])
+def admin_dashboard():
+    if 'user' not in session or session['user']['role'] != 'admin':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    field = session['user']['field']
+    admin_id = session['user']['id']
+
+    if request.method == 'POST':
+        learner_id = request.form['learner_id']
+        course_id = request.form['course_id']
+        cursor.execute("INSERT INTO assigned_courses (learner_id, course_id, assigned_by) VALUES (%s, %s, %s)",
+                       (learner_id, course_id, admin_id))
+        conn.commit()
+
+    cursor.execute("SELECT * FROM users WHERE role='learner' AND field=%s", (field,))
+    learners = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM courses WHERE field=%s", (field,))
+    courses = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT ac.id, u.name as learner_name, c.title, ac.status 
+        FROM assigned_courses ac 
+        JOIN users u ON ac.learner_id = u.id 
+        JOIN courses c ON ac.course_id = c.id 
+        WHERE u.field=%s
+    """, (field,))
+    assigned = cursor.fetchall()
+
+    conn.close()
+    return render_template('admin_dashboard.html', learners=learners, courses=courses, assigned=assigned)
+
+
+# ------------------------ LEARNER DASHBOARD ------------------------
+@app.route('/dashboard/learner', methods=['GET', 'POST'])
+def learner_dashboard():
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    learner_id = session['user']['id']
+
+    if request.method == 'POST':
+        assignment_id = request.form['assignment_id']
+        cursor.execute("UPDATE assigned_courses SET status='completed' WHERE id=%s AND learner_id=%s",
+                       (assignment_id, learner_id))
+        conn.commit()
+
+    cursor.execute("""
+        SELECT ac.id, c.title, ac.status 
+        FROM assigned_courses ac 
+        JOIN courses c ON ac.course_id = c.id 
+        WHERE ac.learner_id=%s
+    """, (learner_id,))
+    courses = cursor.fetchall()
+
+    conn.close()
+    return render_template('learner_dashboard.html', courses=courses)
+
+
+# ------------------------ LOGOUT ------------------------
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/login')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

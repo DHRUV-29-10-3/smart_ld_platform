@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Instructor Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h2>Welcome, {{ user.name }} (Instructor)</h2>
+
+  <h3>Create New Course</h3>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="text" name="title" placeholder="Course Title" required><br>
+    <textarea name="description" placeholder="Course Description" required></textarea><br>
+
+    <label>Type:</label>
+    <select name="type" required>
+      <option value="">Select Type</option>
+      <option value="video">Video</option>
+      <option value="document">Document</option>
+      <option value="quiz">Quiz</option>
+    </select><br>
+
+    <label>Field:</label>
+    <select name="field" required>
+      <option value="">Select Field</option>
+      <option value="software engineer">Software Engineer</option>
+      <option value="AI/ML">AI/ML</option>
+      <option value="ui-ux">UI/UX</option>
+    </select><br>
+
+    <input type="file" name="file" required><br>
+    <button type="submit">Create Course</button>
+  </form>
+
+  <hr>
+
+  <h3>Your Created Courses</h3>
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Title</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Field</th>
+      <th>File</th>
+      <th>Actions</th>
+    </tr>
+    {% for course in courses %}
+    <tr>
+      <td>{{ course.title }}</td>
+      <td>{{ course.description }}</td>
+      <td>{{ course.type }}</td>
+      <td>{{ course.field }}</td>
+      <td>
+        {% if course.filename %}
+          <a href="/uploads/{{ course.filename }}" target="_blank">View</a>
+        {% else %}
+          No file
+        {% endif %}
+      </td>
+      <td>
+        <a href="/edit_course/{{ course.id }}">Edit</a> |
+        <a href="/delete_course/{{ course.id }}">Delete</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

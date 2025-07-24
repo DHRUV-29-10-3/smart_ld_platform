@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Course</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h2>Edit Course: {{ course.title }}</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    <input type="text" name="title" value="{{ course.title }}" required><br>
+    <textarea name="description" required>{{ course.description }}</textarea><br>
+
+    <label>Type:</label>
+    <select name="type" required>
+      <option value="video" {% if course.type == 'video' %}selected{% endif %}>Video</option>
+      <option value="document" {% if course.type == 'document' %}selected{% endif %}>Document</option>
+      <option value="quiz" {% if course.type == 'quiz' %}selected{% endif %}>Quiz</option>
+    </select><br>
+
+    <label>Field:</label>
+    <select name="field" required>
+      <option value="software engineer" {% if course.field == 'software engineer' %}selected{% endif %}>Software Engineer</option>
+      <option value="AI/ML" {% if course.field == 'AI/ML' %}selected{% endif %}>AI/ML</option>
+      <option value="ui-ux" {% if course.field == 'ui-ux' %}selected{% endif %}>UI/UX</option>
+    </select><br>
+
+    <label>Upload New File (optional):</label>
+    <input type="file" name="file"><br>
+
+    <button type="submit">Update Course</button>
+  </form>
+
+  <br>
+  <a href="/dashboard/instructor">Back to Dashboard</a>
+</body>
+</html>

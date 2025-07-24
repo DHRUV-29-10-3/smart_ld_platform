@@ -1,0 +1,133 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f8;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 700px;
+  background: #ffffff;
+  padding: 30px;
+  margin: 50px auto;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+form label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 500;
+  color: #444;
+}
+
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #007BFF;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.button-link {
+  display: inline-block;
+  margin: 10px;
+  padding: 12px 20px;
+  background-color: #007BFF;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.button-link:hover {
+  background-color: #0056b3;
+}
+
+.button-link.small {
+  font-size: 14px;
+  padding: 6px 14px;
+  margin: 0 5px;
+}
+
+.logout-link {
+  display: inline-block;
+  margin-top: 30px;
+  color: #555;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.logout-link:hover {
+  text-decoration: underline;
+}
+
+.role-info {
+  font-size: 16px;
+  margin-bottom: 25px;
+  color: #666;
+}
+
+.course-list {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+.course-list li {
+  padding: 15px;
+  background: #f9f9f9;
+  margin-bottom: 15px;
+  border-left: 4px solid #007BFF;
+  border-radius: 5px;
+}
+
+.course-list p {
+  margin: 5px 0 0;
+  color: #333;
+}
+
+.action-buttons {
+  margin-top: 10px;
+}
+
+.delete-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: #b52a38;
+}

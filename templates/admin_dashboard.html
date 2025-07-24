@@ -1,0 +1,50 @@
+<!-- admin_dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Dashboard</h2>
+
+        <h3>Assign Course to Learner</h3>
+        <form method="POST" action="/admin/assign_course">
+            <label for="user_id">Select Learner:</label>
+            <select name="user_id" required>
+                {% for user in learners %}
+                    <option value="{{ user['id'] }}">{{ user['name'] }} ({{ user['email'] }})</option>
+                {% endfor %}
+            </select><br><br>
+
+            <label for="course_id">Select Course:</label>
+            <select name="course_id" required>
+                {% for course in courses %}
+                    <option value="{{ course['id'] }}">{{ course['title'] }}</option>
+                {% endfor %}
+            </select><br><br>
+
+            <button type="submit">Assign Course</button>
+        </form>
+
+        <hr>
+
+        <h3>Monitor Learners</h3>
+        <table border="1">
+            <tr>
+                <th>Learner</th>
+                <th>Course</th>
+                <th>Status</th>
+            </tr>
+            {% for record in monitoring_data %}
+            <tr>
+                <td>{{ record['user_name'] }}</td>
+                <td>{{ record['course_title'] }}</td>
+                <td>{{ 'Completed' if record['is_completed'] else 'Pending' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
