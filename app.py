@@ -174,7 +174,14 @@ def edit_course(course_id):
     return render_template("edit_course.html", course=course)
 
 
-# ------------------------ ADMIN DASHBOARD ------------------------
+# ------------------------ LOGOUT ------------------------
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/login')
+
+
 @app.route('/dashboard/admin', methods=['GET', 'POST'])
 def admin_dashboard():
     if 'user' not in session or session['user']['role'] != 'admin':
@@ -182,33 +189,43 @@ def admin_dashboard():
 
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
-    field = session['user']['field']
+    admin_field = session['user']['field']
     admin_id = session['user']['id']
 
     if request.method == 'POST':
         learner_id = request.form['learner_id']
         course_id = request.form['course_id']
-        cursor.execute("INSERT INTO assigned_courses (learner_id, course_id, assigned_by) VALUES (%s, %s, %s)",
-                       (learner_id, course_id, admin_id))
-        conn.commit()
 
-    cursor.execute("SELECT * FROM users WHERE role='learner' AND field=%s", (field,))
+        # Ensure field match between learner and admin
+        cursor.execute("SELECT field FROM users WHERE id=%s AND role='learner'", (learner_id,))
+        learner = cursor.fetchone()
+
+        cursor.execute("SELECT field FROM courses WHERE id=%s", (course_id,))
+        course = cursor.fetchone()
+
+        if learner and course and learner['field'] == admin_field and course['field'] == admin_field:
+            cursor.execute("INSERT INTO assigned_courses (learner_id, course_id, assigned_by) VALUES (%s, %s, %s)",
+                           (learner_id, course_id, admin_id))
+            conn.commit()
+
+    # Fetch learners and courses only in admin's field
+    cursor.execute("SELECT * FROM users WHERE role='learner' AND field=%s", (admin_field,))
     learners = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM courses WHERE field=%s", (field,))
+    cursor.execute("SELECT * FROM courses WHERE field=%s", (admin_field,))
     courses = cursor.fetchall()
 
     cursor.execute("""
-        SELECT ac.id, u.name as learner_name, c.title, ac.status 
-        FROM assigned_courses ac 
-        JOIN users u ON ac.learner_id = u.id 
-        JOIN courses c ON ac.course_id = c.id 
-        WHERE u.field=%s
-    """, (field,))
-    assigned = cursor.fetchall()
+        SELECT ac.id, u.name AS learner_name, c.title AS course_title, ac.status
+        FROM assigned_courses ac
+        JOIN users u ON ac.learner_id = u.id
+        JOIN courses c ON ac.course_id = c.id
+        WHERE u.field = %s
+    """, (admin_field,))
+    assigned_courses = cursor.fetchall()
 
     conn.close()
-    return render_template('admin_dashboard.html', learners=learners, courses=courses, assigned=assigned)
+    return render_template('admin_dashboard.html', learners=learners, courses=courses, assigned=assigned_courses)
 
 
 # ------------------------ LEARNER DASHBOARD ------------------------
@@ -217,9 +234,9 @@ def learner_dashboard():
     if 'user' not in session or session['user']['role'] != 'learner':
         return redirect('/login')
 
+    learner_id = session['user']['id']
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
-    learner_id = session['user']['id']
 
     if request.method == 'POST':
         assignment_id = request.form['assignment_id']
@@ -228,23 +245,15 @@ def learner_dashboard():
         conn.commit()
 
     cursor.execute("""
-        SELECT ac.id, c.title, ac.status 
-        FROM assigned_courses ac 
-        JOIN courses c ON ac.course_id = c.id 
-        WHERE ac.learner_id=%s
+        SELECT ac.id, c.title AS course_title, ac.status
+        FROM assigned_courses ac
+        JOIN courses c ON ac.course_id = c.id
+        WHERE ac.learner_id = %s
     """, (learner_id,))
-    courses = cursor.fetchall()
+    assigned_courses = cursor.fetchall()
 
     conn.close()
-    return render_template('learner_dashboard.html', courses=courses)
-
-
-# ------------------------ LOGOUT ------------------------
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/login')
-
+    return render_template('learner_dashboard.html', assigned_courses=assigned_courses)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>User Dashboard</title>
+    <title>Learner Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Your Assigned Courses</h2>
-        <table border="1">
-            <tr>
-                <th>Course Title</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            {% for course in assigned_courses %}
-            <tr>
-                <td>{{ course['title'] }}</td>
-                <td>{{ 'Completed' if course['is_completed'] else 'Pending' }}</td>
-                <td>
-                    {% if not course['is_completed'] %}
-                    <form method="POST" action="/user/complete_course/{{ course['course_id'] }}">
-                        <button type="submit">Mark as Completed</button>
-                    </form>
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+    <h1>Welcome Learner - {{ session['user']['name'] }}</h1>
+
+    <h2>Your Assigned Courses</h2>
+    <table border="1">
+        <tr>
+            <th>Course</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for course in assigned_courses %}
+        <tr>
+            <td>{{ course.course_title }}</td>
+            <td>{{ course.status }}</td>
+            <td>
+                {% if course.status != 'completed' %}
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="assignment_id" value="{{ course.id }}">
+                    <button type="submit">Mark as Completed</button>
+                </form>
+                {% else %}
+                    ✅ Completed
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
