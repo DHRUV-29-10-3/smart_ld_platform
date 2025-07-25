@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 import os
 from dotenv import load_dotenv
 from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+from flask import send_from_directory
 
 load_dotenv()
 
@@ -88,15 +89,25 @@ def instructor_dashboard():
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
-        course_type = request.form['type']
+        course_type = request.form['type']  # 'video', 'document', or 'assignment'
         file = request.files['file']
         field = request.form['field']
 
-        if file:
+        filename = None
+        if file and file.filename:
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        else:
-            filename = None
+            # Determine folder based on course_type
+            if course_type == 'video':
+                folder = os.path.join('course_materials', 'videos')
+            elif course_type == 'document':
+                folder = os.path.join('course_materials', 'documents')
+            elif course_type == 'assignment':
+                folder = os.path.join('course_materials', 'assignments')
+            else:
+                folder = 'uploads'  # fallback
+
+            os.makedirs(folder, exist_ok=True)
+            file.save(os.path.join(folder, filename))
 
         cursor.execute(
             "INSERT INTO courses (title, description, type, field, filename, instructor_id) VALUES (%s, %s, %s, %s, %s, %s)",
@@ -228,7 +239,8 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', learners=learners, courses=courses, assigned=assigned_courses)
 
 
-# ------------------------ LEARNER DASHBOARD ------------------------
+# ------------------------ LEARNER DASHBOARD ------------------------# ...existing code...
+
 @app.route('/dashboard/learner', methods=['GET', 'POST'])
 def learner_dashboard():
     if 'user' not in session or session['user']['role'] != 'learner':
@@ -245,7 +257,7 @@ def learner_dashboard():
         conn.commit()
 
     cursor.execute("""
-        SELECT ac.id, c.title AS course_title, ac.status
+        SELECT ac.id, c.id AS course_id, c.title AS course_title, ac.status, c.filename, c.type
         FROM assigned_courses ac
         JOIN courses c ON ac.course_id = c.id
         WHERE ac.learner_id = %s
@@ -254,6 +266,46 @@ def learner_dashboard():
 
     conn.close()
     return render_template('learner_dashboard.html', assigned_courses=assigned_courses)
+
+# ...existing code...
+
+@app.route('/download_material/<filetype>/<filename>')
+def download_material(filetype, filename):
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+
+    valid_types = {'video': 'videos', 'document': 'documents', 'assignment': 'assignments'}
+    if filetype not in valid_types:
+        return "❌ Invalid file type", 400
+
+    folder = os.path.join('course_materials', valid_types[filetype])
+    filepath = os.path.join(folder, filename)
+
+    if not os.path.isfile(filepath):
+        return f"❌ File not found: {filepath}", 404
+
+    return send_from_directory(folder, filename, as_attachment=True)
+
+@app.route('/watch_video/<filename>')
+def watch_video(filename):
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+    return render_template('watch_video.html', filename=filename)
+
+@app.route('/video/<filename>')
+def serve_video(filename):
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+
+    folder = os.path.join('course_materials', 'videos')
+    filepath = os.path.join(folder, filename)
+
+    if not os.path.isfile(filepath):
+        return f"❌ File not found: {filepath}", 404
+
+    return send_from_directory(folder, filename)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

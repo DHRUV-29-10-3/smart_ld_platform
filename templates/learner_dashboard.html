@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Learner Dashboard</title>
@@ -14,22 +14,131 @@
             <th>Status</th>
             <th>Action</th>
         </tr>
-        {% for course in assigned_courses %}
-        <tr>
-            <td>{{ course.course_title }}</td>
-            <td>{{ course.status }}</td>
-            <td>
-                {% if course.status != 'completed' %}
-                <form method="post" style="display:inline;">
-                    <input type="hidden" name="assignment_id" value="{{ course.id }}">
-                    <button type="submit">Mark as Completed</button>
-                </form>
-                {% else %}
-                    ✅ Completed
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
+      
+{% for course in assigned_courses %}
+<tr>
+    <td>
+        {{ course.course_title }}
+        {% if course.filename %}
+            {% if course.type == 'video' %}
+                <a href="{{ url_for('watch_video', filename=course.filename) }}" target="_blank">▶ Watch Video</a>
+            {% elif course.type == 'document' %}
+                <a href="{{ url_for('download_material', filetype='document', filename=course.filename) }}">📄 Download Document</a>
+            {% elif course.type == 'assignment' %}
+                <a href="{{ url_for('download_material', filetype='assignment', filename=course.filename) }}">📝 Download Assignment</a>
+            {% endif %}
+        {% else %}
+            <span style="color:gray;">(No material)</span>
+        {% endif %}
+    </td>
+    <td>{{ course.status }}</td>
+    <td>
+        {% if course.status != 'completed' %}
+        <form method="post" style="display:inline;">
+            <input type="hidden" name="assignment_id" value="{{ course.id }}">
+            <button type="submit">Mark as Completed</button>
+        </form>
+        {% else %}
+            ✅ Completed
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+
     </table>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner Dashboard - Enterprise Learning Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">Welcome, {{ session['user']['name'] }}</h1>
+            <div class="user-badge">Learner</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card fade-in">
+            <div class="card-header">
+                <h2 class="card-title">📚 Your Assigned Courses</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in assigned_courses %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--gray-900); margin-bottom: 0.25rem;">
+                                        {{ course.course_title }}
+                                    </div>
+                                    {% if course.filename %}
+                                        {% if course.type == 'video' %}
+                                            <a href="{{ url_for('watch_video', filename=course.filename) }}" 
+                                               class="material-link" target="_blank">
+                                                ▶️ Watch Video
+                                            </a>
+                                        {% elif course.type == 'document' %}
+                                            <a href="{{ url_for('download_material', filetype='document', filename=course.filename) }}" 
+                                               class="material-link">
+                                                📄 Download Document
+                                            </a>
+                                        {% elif course.type == 'assignment' %}
+                                            <a href="{{ url_for('download_material', filetype='assignment', filename=course.filename) }}" 
+                                               class="material-link">
+                                                📝 Download Assignment
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="material-unavailable">(No material available)</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if course.status == 'completed' %}
+                                        <span class="status-badge status-completed">✅ Completed</span>
+                                    {% elif course.status == 'assigned' %}
+                                        <span class="status-badge status-assigned">📋 Assigned</span>
+                                    {% else %}
+                                        <span class="status-badge status-pending">⏳ Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        {% if course.status != 'completed' %}
+                                        <form method="post" style="display:inline;">
+                                            <input type="hidden" name="assignment_id" value="{{ course.id }}">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                Mark as Completed
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                            <span class="status-badge status-completed">✅ Completed</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

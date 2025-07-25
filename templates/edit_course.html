@@ -1,0 +1,121 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Course</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h2>Edit Course: {{ course.title }}</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    <input type="text" name="title" value="{{ course.title }}" required><br>
+    <textarea name="description" required>{{ course.description }}</textarea><br>
+
+    <label>Type:</label>
+    <select name="type" required>
+      <option value="video" {% if course.type == 'video' %}selected{% endif %}>Video</option>
+      <option value="document" {% if course.type == 'document' %}selected{% endif %}>Document</option>
+      <option value="quiz" {% if course.type == 'quiz' %}selected{% endif %}>Quiz</option>
+    </select><br>
+
+    <label>Field:</label>
+    <select name="field" required>
+      <option value="software engineer" {% if course.field == 'software engineer' %}selected{% endif %}>Software Engineer</option>
+      <option value="AI/ML" {% if course.field == 'AI/ML' %}selected{% endif %}>AI/ML</option>
+      <option value="ui-ux" {% if course.field == 'ui-ux' %}selected{% endif %}>UI/UX</option>
+    </select><br>
+
+    <label>Upload New File (optional):</label>
+    <input type="file" name="file"><br>
+
+    <button type="submit">Update Course</button>
+  </form>
+
+  <br>
+  <a href="/dashboard/instructor">Back to Dashboard</a>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Course - Enterprise Learning Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">Edit Course</h1>
+            <div class="user-badge">Instructor</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container fade-in">
+            <div class="form-header">
+                <h2 class="card-title">✏️ Edit Course: {{ course.title }}</h2>
+            </div>
+            <div class="form-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label" for="title">Course Title</label>
+                        <input type="text" id="title" name="title" value="{{ course.title }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="description">Course Description</label>
+                        <textarea id="description" name="description" required>{{ course.description }}</textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="type">Content Type</label>
+                            <select id="type" name="type" required>
+                                <option value="video" {% if course.type == 'video' %}selected{% endif %}>📹 Video</option>
+                                <option value="document" {% if course.type == 'document' %}selected{% endif %}>📄 Document</option>
+                                <option value="quiz" {% if course.type == 'quiz' %}selected{% endif %}>📝 Quiz</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="field">Field</label>
+                            <select id="field" name="field" required>
+                                <option value="software engineer" {% if course.field == 'software engineer' %}selected{% endif %}>💻 Software Engineer</option>
+                                <option value="AI/ML" {% if course.field == 'AI/ML' %}selected{% endif %}>🤖 AI/ML</option>
+                                <option value="ui-ux" {% if course.field == 'ui-ux' %}selected{% endif %}>🎨 UI/UX</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {% if course.filename %}
+                    <div class="form-group">
+                        <label class="form-label">Current File</label>
+                        <div style="padding: 1rem; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--gray-200);">
+                            <a href="/uploads/{{ course.filename }}" target="_blank" class="material-link">
+                                📎 {{ course.filename }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="file">Upload New File (optional)</label>
+                        <input type="file" id="file" name="file">
+                        <div style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.5rem;">
+                            Leave empty to keep the current file
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button type="submit" class="btn btn-primary">💾 Update Course</button>
+                        <a href="/dashboard/instructor" class="btn btn-secondary">⬅️ Back to Dashboard</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

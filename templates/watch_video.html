@@ -1,0 +1,156 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Watch Video</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>🎬 Watch Course Video</h2>
+
+        <video width="100%" controls style="border-radius: 10px; box-shadow: var(--shadow);">
+            <source src="{{ url_for('serve_video', filename=filename) }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        <br><br>
+        <a href="{{ url_for('learner_dashboard') }}">
+            <button>⬅️ Back to Dashboard</button>
+        </a>
+    </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Video - Enterprise Learning Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">Course Video</h1>
+            <div class="user-badge">Learning Mode</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="video-container fade-in">
+            <div class="video-header">
+                <h2 class="card-title">🎬 Watch Course Video</h2>
+            </div>
+            <div class="video-content">
+                <video width="100%" controls controlsList="nodownload" style="border-radius: var(--radius); box-shadow: var(--shadow);">
+                    <source src="{{ url_for('serve_video', filename=filename) }}" type="video/mp4">
+                    <p style="color: var(--red-600); text-align: center; padding: 2rem;">
+                        Your browser does not support the video tag. Please try using a different browser.
+                    </p>
+                </video>
+                
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);">
+                    <div class="flex items-center justify-between">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">
+                            📹 Video: {{ filename }}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleFullscreen()" class="btn btn-secondary btn-sm">
+                                🔍 Fullscreen
+                            </button>
+                            <a href="{{ url_for('learner_dashboard') }}" class="btn btn-primary btn-sm">
+                                ⬅️ Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Controls Info -->
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-body">
+                <h3 style="margin-bottom: 1rem; color: var(--gray-700);">💡 Video Controls</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.875rem; color: var(--gray-600);">
+                    <div>• <strong>Space:</strong> Play/Pause</div>
+                    <div>• <strong>← →:</strong> Skip 10s</div>
+                    <div>• <strong>↑ ↓:</strong> Volume</div>
+                    <div>• <strong>F:</strong> Fullscreen</div>
+                    <div>• <strong>M:</strong> Mute</div>
+                    <div>• <strong>0-9:</strong> Jump to %</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFullscreen() {
+            const video = document.querySelector('video');
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            const video = document.querySelector('video');
+            if (!video) return;
+            
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                    break;
+                case 'KeyF':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'KeyM':
+                    e.preventDefault();
+                    video.muted = !video.muted;
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    video.currentTime = Math.max(0, video.currentTime - 10);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    video.currentTime = Math.min(video.duration, video.currentTime + 10);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    video.volume = Math.min(1, video.volume + 0.1);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    video.volume = Math.max(0, video.volume - 0.1);
+                    break;
+            }
+        });
+
+        // Add progress tracking
+        const video = document.querySelector('video');
+        if (video) {
+            video.addEventListener('loadedmetadata', function() {
+                console.log('Video loaded:', video.duration, 'seconds');
+            });
+            
+            video.addEventListener('timeupdate', function() {
+                const progress = (video.currentTime / video.duration) * 100;
+                // You can send this progress to your backend if needed
+            });
+        }
+    </script>
+</body>
+</html>

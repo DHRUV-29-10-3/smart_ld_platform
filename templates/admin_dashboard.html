@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Admin Dashboard</title>
@@ -41,5 +41,271 @@
         </tr>
         {% endfor %}
     </table>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Enterprise Learning Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">Welcome, {{ session['user']['name'] }}</h1>
+            <div class="user-badge" style="background: var(--red-100); color: var(--red-600); border-color: var(--red-200);">
+                👑 Admin
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Course Assignment Section -->
+        <div class="form-container fade-in">
+            <div class="form-header">
+                <h2 class="card-title">📋 Assign Course to Learner</h2>
+            </div>
+            <div class="form-body">
+                <form method="post">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="learner_id">Select Learner</label>
+                            <select id="learner_id" name="learner_id" required>
+                                <option value="">Choose a learner...</option>
+                                {% for learner in learners %}
+                                    <option value="{{ learner.id }}">
+                                        👤 {{ learner.name }} ({{ learner.field }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="course_id">Select Course</label>
+                            <select id="course_id" name="course_id" required>
+                                <option value="">Choose a course...</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">
+                                        📚 {{ course.title }} ({{ course.field }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        ✅ Assign Course
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0;">
+            <div class="card fade-in">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary-600);">
+                        {{ learners|length }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Total Learners</div>
+                </div>
+            </div>
+            
+            <div class="card fade-in">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--green-600);">
+                        {{ courses|length }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Available Courses</div>
+                </div>
+            </div>
+            
+            <div class="card fade-in">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--yellow-600);">
+                        {{ assigned|length }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Total Assignments</div>
+                </div>
+            </div>
+            
+            <div class="card fade-in">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--green-600);">
+                        {{ assigned|selectattr('status', 'equalto', 'completed')|list|length }}
+                    </div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Courses Section -->
+        <div class="card fade-in">
+            <div class="card-header">
+                <div class="flex items-center justify-between">
+                    <h2 class="card-title">📊 Course Assignments Overview</h2>
+                    <div class="user-badge" style="background: var(--gray-100); color: var(--gray-700);">
+                        Field: {{ session['user']['field'] }}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if assigned %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Learner Details</th>
+                                <th>Course Information</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in assigned %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--gray-900); margin-bottom: 0.25rem;">
+                                        👤 {{ row.learner_name }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                        Field: {{ row.learner_field if row.learner_field else 'Not specified' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--gray-900); margin-bottom: 0.25rem;">
+                                        📚 {{ row.course_title }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                        Type: {{ row.course_type if row.course_type else 'Not specified' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if row.status == 'completed' %}
+                                        <span class="status-badge status-completed">✅ Completed</span>
+                                    {% elif row.status == 'assigned' %}
+                                        <span class="status-badge status-assigned">📋 Assigned</span>
+                                    {% else %}
+                                        <span class="status-badge status-pending">⏳ Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.status == 'completed' %}
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
+                                                <div style="height: 100%; background: var(--green-500); width: 100%;"></div>
+                                            </div>
+                                            <span style="font-size: 0.75rem; color: var(--green-600); font-weight: 500;">100%</span>
+                                        </div>
+                                    {% elif row.status == 'assigned' %}
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
+                                                <div style="height: 100%; background: var(--yellow-500); width: 25%;"></div>
+                                            </div>
+                                            <span style="font-size: 0.75rem; color: var(--yellow-600); font-weight: 500;">25%</span>
+                                        </div>
+                                    {% else %}
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px;"></div>
+                                            <span style="font-size: 0.75rem; color: var(--gray-500); font-weight: 500;">0%</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center" style="padding: 3rem; color: var(--gray-500);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                    <h3 style="color: var(--gray-600); margin-bottom: 0.5rem;">No assignments yet</h3>
+                    <p>Start by assigning courses to learners using the form above.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card fade-in" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h2 class="card-title">⚡ Quick Actions</h2>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div style="padding: 1.5rem; background: var(--blue-50); border-radius: var(--radius); border: 1px solid var(--blue-200);">
+                        <h4 style="color: var(--blue-700); margin-bottom: 0.5rem;">👥 Manage Users</h4>
+                        <p style="color: var(--blue-600); font-size: 0.875rem; margin-bottom: 1rem;">View and manage all learners and instructors</p>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('User management feature coming soon!')">
+                            View Users
+                        </button>
+                    </div>
+                    
+                    <div style="padding: 1.5rem; background: var(--green-50); border-radius: var(--radius); border: 1px solid var(--green-200);">
+                        <h4 style="color: var(--green-700); margin-bottom: 0.5rem;">📊 Reports</h4>
+                        <p style="color: var(--green-600); font-size: 0.875rem; margin-bottom: 1rem;">Generate detailed progress and completion reports</p>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Reports feature coming soon!')">
+                            View Reports
+                        </button>
+                    </div>
+                    
+                    <div style="padding: 1.5rem; background: var(--purple-50); border-radius: var(--radius); border: 1px solid var(--purple-200);">
+                        <h4 style="color: var(--purple-700); margin-bottom: 0.5rem;">⚙️ Settings</h4>
+                        <p style="color: var(--purple-600); font-size: 0.875rem; margin-bottom: 1rem;">Configure platform settings and preferences</p>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Settings feature coming soon!')">
+                            Open Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-refresh stats every 30 seconds
+            // setInterval(function() {
+            //     // In a real app, you'd make an AJAX call to refresh stats
+            //     console.log('Refreshing dashboard stats...');
+            // }, 30000);
+
+            // Form validation
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const learner = document.getElementById('learner_id').value;
+                    const course = document.getElementById('course_id').value;
+                    
+                    if (!learner || !course) {
+                        e.preventDefault();
+                        alert('Please select both a learner and a course before assigning.');
+                        return false;
+                    }
+                    
+                    // Show success message
+                    const button = form.querySelector('button[type="submit"]');
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '⏳ Assigning...';
+                    button.disabled = true;
+                    
+                    // Re-enable after form submission
+                    setTimeout(function() {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

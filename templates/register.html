@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Register</title>
@@ -25,5 +25,66 @@
         <button type="submit">Register</button>
     </form>
     <p>Already registered? <a href="/login">Login here</a></p>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Enterprise Learning Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card fade-in">
+            <h2 class="auth-title">Create Your Account</h2>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Create a password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="role">Role</label>
+                    <select id="role" name="role" required>
+                        <option value="">Select your role</option>
+                        <option value="learner">Learner</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="field">Field of Interest</label>
+                    <select id="field" name="field" required>
+                        <option value="">Select your field</option>
+                        <option value="software engineer">Software Engineer</option>
+                        <option value="AI/ML">AI/ML</option>
+                        <option value="ui-ux">UI/UX</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+            </form>
+            
+            <p class="auth-subtitle">
+                Already have an account? <a href="/login">Sign in here</a>
+            </p>
+        </div>
+    </div>
 </body>
 </html>
