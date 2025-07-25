@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ course.title }} - Course Details</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">{{ course.title }}</h1>
+            <a href="{{ url_for('recommended_courses') }}" class="btn">← Back to Recommendations</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card fade-in">
+            <div class="card-body">
+                <h3>Description:</h3>
+                <p>{{ course.description }}</p>
+                
+                <h4>Type: {{ course.type }}</h4>
+                <h4>Field: {{ course.field }}</h4>
+
+                <!-- {% if course.filename %}
+                    {% if course.type == 'video' %}
+                        <a href="{{ url_for('watch_video', filename=course.filename) }}" class="btn">▶ Watch Video</a>
+                    {% elif course.type == 'document' %}
+                        <a href="{{ url_for('download_material', filetype='document', filename=course.filename) }}" class="btn">📄 Download Document</a>
+                    {% elif course.type == 'assignment' %}
+                        <a href="{{ url_for('download_material', filetype='assignment', filename=course.filename) }}" class="btn">📝 Download Assignment</a>
+                    {% endif %} -->
+                <!-- {% else %}
+                    <p style="color: gray;">No file available.</p> -->
+                <!-- {% endif %} -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -121,7 +121,22 @@ def instructor_dashboard():
     return render_template("instructor_dashboard.html", user=session['user'], courses=courses)
 
 
-# ------------------------ DELETE COURSE ------------------------
+# # ------------------------ DELETE COURSE ------------------------
+# @app.route('/delete_course/<int:course_id>')
+# def delete_course(course_id):
+#     if 'user' not in session or session['user']['role'] != 'instructor':
+#         return redirect('/login')
+
+#     conn = connect_db()
+#     cursor = conn.cursor()
+
+#     cursor.execute("DELETE FROM courses WHERE id = %s AND instructor_id = %s",
+#                    (course_id, session['user']['id']))
+#     conn.commit()
+#     conn.close()
+
+#     return redirect('/dashboard/instructor')
+
 @app.route('/delete_course/<int:course_id>')
 def delete_course(course_id):
     if 'user' not in session or session['user']['role'] != 'instructor':
@@ -130,15 +145,71 @@ def delete_course(course_id):
     conn = connect_db()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM courses WHERE id = %s AND instructor_id = %s",
-                   (course_id, session['user']['id']))
-    conn.commit()
-    conn.close()
+    try:
+        # Step 1: Remove all course assignments (due to FK constraint)
+        cursor.execute("DELETE FROM assigned_courses WHERE course_id = %s", (course_id,))
+        
+        # Step 2: Now delete from course table
+        cursor.execute("DELETE FROM courses WHERE id = %s AND instructor_id = %s",
+                       (course_id, session['user']['id']))
+        
+        conn.commit()
+    except mysql.connector.Error as err:
+        conn.rollback()
+        print("Error:", err)
+        return f"❌ Error deleting course: {err}"
+    finally:
+        conn.close()
 
     return redirect('/dashboard/instructor')
 
 
 # ------------------------ EDIT COURSE ------------------------
+# @app.route('/edit_course/<int:course_id>', methods=['GET', 'POST'])
+# def edit_course(course_id):
+#     if 'user' not in session or session['user']['role'] != 'instructor':
+#         return redirect('/login')
+
+#     conn = connect_db()
+#     cursor = conn.cursor(dictionary=True)
+
+#     if request.method == 'POST':
+#         title = request.form['title']
+#         description = request.form['description']
+#         course_type = request.form['type']
+#         field = request.form['field']
+#         file = request.files.get('file')
+
+#         if file and file.filename:
+#             filename = secure_filename(file.filename)
+#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+#             cursor.execute("""
+#                 UPDATE courses 
+#                 SET title=%s, description=%s, type=%s, field=%s, filename=%s 
+#                 WHERE id=%s AND instructor_id=%s
+#             """, (title, description, course_type, field, filename, course_id, session['user']['id']))
+#         else:
+#             cursor.execute("""
+#                 UPDATE courses 
+#                 SET title=%s, description=%s, type=%s, field=%s 
+#                 WHERE id=%s AND instructor_id=%s
+#             """, (title, description, course_type, field, course_id, session['user']['id']))
+
+#         conn.commit()
+#         conn.close()
+#         return redirect('/dashboard/instructor')
+
+#     cursor.execute("SELECT * FROM courses WHERE id = %s AND instructor_id = %s", 
+#                    (course_id, session['user']['id']))
+#     course = cursor.fetchone()
+#     conn.close()
+
+#     if not course:
+#         return "❌ Course not found or unauthorized access."
+
+#     return render_template("edit_course.html", course=course)
+
 @app.route('/edit_course/<int:course_id>', methods=['GET', 'POST'])
 def edit_course(course_id):
     if 'user' not in session or session['user']['role'] != 'instructor':
@@ -183,6 +254,7 @@ def edit_course(course_id):
         return "❌ Course not found or unauthorized access."
 
     return render_template("edit_course.html", course=course)
+
 
 
 # ------------------------ LOGOUT ------------------------
@@ -241,12 +313,43 @@ def admin_dashboard():
 
 # ------------------------ LEARNER DASHBOARD ------------------------# ...existing code...
 
+# @app.route('/dashboard/learner', methods=['GET', 'POST'])
+# def learner_dashboard():
+#     if 'user' not in session or session['user']['role'] != 'learner':
+#         return redirect('/login')
+
+#     learner_id = session['user']['id']
+#     conn = connect_db()
+#     cursor = conn.cursor(dictionary=True)
+
+#     if request.method == 'POST':
+#         assignment_id = request.form['assignment_id']
+#         cursor.execute("UPDATE assigned_courses SET status='completed' WHERE id=%s AND learner_id=%s",
+#                        (assignment_id, learner_id))
+#         conn.commit()
+
+#     cursor.execute("""
+#         SELECT ac.id, c.id AS course_id, c.title AS course_title, ac.status, c.filename, c.type
+#         FROM assigned_courses ac
+#         JOIN courses c ON ac.course_id = c.id
+#         WHERE ac.learner_id = %s
+#     """, (learner_id,))
+#     assigned_courses = cursor.fetchall()
+
+#     conn.close()
+#     return render_template('learner_dashboard.html', assigned_courses=assigned_courses)
+
+
+
+
 @app.route('/dashboard/learner', methods=['GET', 'POST'])
 def learner_dashboard():
     if 'user' not in session or session['user']['role'] != 'learner':
         return redirect('/login')
 
     learner_id = session['user']['id']
+    learner_field = session['user']['field']
+
     conn = connect_db()
     cursor = conn.cursor(dictionary=True)
 
@@ -256,6 +359,7 @@ def learner_dashboard():
                        (assignment_id, learner_id))
         conn.commit()
 
+    # Fetch assigned courses
     cursor.execute("""
         SELECT ac.id, c.id AS course_id, c.title AS course_title, ac.status, c.filename, c.type
         FROM assigned_courses ac
@@ -264,46 +368,168 @@ def learner_dashboard():
     """, (learner_id,))
     assigned_courses = cursor.fetchall()
 
+    # Get course IDs already assigned
+    assigned_course_ids = [course['course_id'] for course in assigned_courses]
+    format_strings = ','.join(['%s'] * len(assigned_course_ids)) if assigned_course_ids else 'NULL'
+
+    # Fetch recommended courses (same field but not already assigned)
+    if assigned_course_ids:
+        cursor.execute(f"""
+            SELECT * FROM courses
+            WHERE field = %s AND id NOT IN ({format_strings})
+        """, [learner_field] + assigned_course_ids)
+    else:
+        cursor.execute("""
+            SELECT * FROM courses WHERE field = %s
+        """, (learner_field,))
+    
+    recommended_courses = cursor.fetchall()
+
     conn.close()
-    return render_template('learner_dashboard.html', assigned_courses=assigned_courses)
+    return render_template('learner_dashboard.html',
+                           assigned_courses=assigned_courses,
+                           recommended_courses=recommended_courses)
+
+
+
+
+@app.route('/recommended')
+def recommended_courses():
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+
+    learner_field = session['user']['field']
+    learner_id = session['user']['id']
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    # Get course_ids already assigned
+    cursor.execute("SELECT course_id FROM assigned_courses WHERE learner_id = %s", (learner_id,))
+    assigned_course_ids = [row['course_id'] for row in cursor.fetchall()]
+
+    if assigned_course_ids:
+        format_strings = ','.join(['%s'] * len(assigned_course_ids))
+        cursor.execute(f"""
+            SELECT * FROM courses
+            WHERE field = %s AND id NOT IN ({format_strings})
+        """, [learner_field] + assigned_course_ids)
+    else:
+        cursor.execute("SELECT * FROM courses WHERE field = %s", (learner_field,))
+    
+    courses = cursor.fetchall()
+    conn.close()
+
+    return render_template("recommended_courses.html", courses=courses)
+
+
+
+
+@app.route('/course/<int:course_id>')
+def course_detail(course_id):
+    if 'user' not in session or session['user']['role'] != 'learner':
+        return redirect('/login')
+
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM courses WHERE id = %s", (course_id,))
+    course = cursor.fetchone()
+    conn.close()
+
+    if not course:
+        return "❌ Course not found."
+
+    return render_template("course_detail.html", course=course)
+
+
+
+
+
+
+
+
 
 # ...existing code...
 
+# @app.route('/download_material/<filetype>/<filename>')
+# def download_material(filetype, filename):
+#     if 'user' not in session or session['user']['role'] != 'learner':
+#         return redirect('/login')
+
+#     valid_types = {'video': 'videos', 'document': 'documents', 'assignment': 'assignments'}
+#     if filetype not in valid_types:
+#         return "❌ Invalid file type", 400
+
+#     folder = os.path.join('course_materials', valid_types[filetype])
+#     filepath = os.path.join(folder, filename)
+
+#     if not os.path.isfile(filepath):
+#         return f"❌ File not found: {filepath}", 404
+
+#     return send_from_directory(folder, filename, as_attachment=True)
+
 @app.route('/download_material/<filetype>/<filename>')
 def download_material(filetype, filename):
-    if 'user' not in session or session['user']['role'] != 'learner':
+    if 'user' not in session:
         return redirect('/login')
 
-    valid_types = {'video': 'videos', 'document': 'documents', 'assignment': 'assignments'}
-    if filetype not in valid_types:
+    folder_map = {
+        'video': 'videos',
+        'document': 'documents',
+        'assignment': 'assignment'
+    }
+
+    if filetype not in folder_map:
         return "❌ Invalid file type", 400
 
-    folder = os.path.join('course_materials', valid_types[filetype])
-    filepath = os.path.join(folder, filename)
-
-    if not os.path.isfile(filepath):
-        return f"❌ File not found: {filepath}", 404
-
-    return send_from_directory(folder, filename, as_attachment=True)
-
-@app.route('/watch_video/<filename>')
-def watch_video(filename):
-    if 'user' not in session or session['user']['role'] != 'learner':
-        return redirect('/login')
-    return render_template('watch_video.html', filename=filename)
-
-@app.route('/video/<filename>')
-def serve_video(filename):
-    if 'user' not in session or session['user']['role'] != 'learner':
-        return redirect('/login')
-
-    folder = os.path.join('course_materials', 'videos')
+    folder = os.path.join('course_materials', folder_map[filetype])
     filepath = os.path.join(folder, filename)
 
     if not os.path.isfile(filepath):
         return f"❌ File not found: {filepath}", 404
 
     return send_from_directory(folder, filename)
+
+
+
+# @app.route('/watch_video/<filename>')
+# def watch_video(filename):
+#     if 'user' not in session or session['user']['role'] != 'learner':
+#         return redirect('/login')
+#     return render_template('watch_video.html', filename=filename)
+@app.route('/watch_video/<filename>')
+def watch_video(filename):
+    if 'user' not in session:
+        return redirect('/login')
+    return render_template('watch_video.html', filename=filename)
+
+# @app.route('/video/<filename>')
+# def serve_video(filename):
+#     if 'user' not in session or session['user']['role'] != 'learner':
+#         return redirect('/login')
+
+    # folder = os.path.join('course_materials', 'videos')
+    # filepath = os.path.join(folder, filename)
+
+    # if not os.path.isfile(filepath):
+    #     return f"❌ File not found: {filepath}", 404
+
+    # return send_from_directory(folder, filename)
+
+@app.route('/video/<filename>')
+def serve_video(filename):
+    if 'user' not in session:
+        return redirect('/login')
+
+    folder = os.path.join('course_materials', 'videos')  # Typo as per your folder
+    filepath = os.path.join(folder, filename)
+
+    if not os.path.isfile(filepath):
+        return f"❌ File not found: {filepath}", 404
+
+    return send_from_directory(folder, filename)
+
 
 
 

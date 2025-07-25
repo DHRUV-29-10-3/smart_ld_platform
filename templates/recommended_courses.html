@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recommended Courses</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="welcome-text">📚 Recommended Courses</h1>
+            <a href="{{ url_for('learner_dashboard') }}" class="btn">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card fade-in">
+            <div class="card-body">
+                {% if courses %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in courses %}
+                            <tr>
+                                <td>{{ course.title }}</td>
+                                <td>{{ course.field }}</td>
+                                <td>{{ course.type }}</td>
+                                <td>
+                                    <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-sm btn-info">🔍 View Details</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <p>No recommendations found for your field.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

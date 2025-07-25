@@ -182,10 +182,18 @@
                                 </td>
                                 <td>
                                     {% if course.filename %}
-                                        <a href="/uploads/{{ course.filename }}" target="_blank" class="action-link">
-                                            📎 View File
-                                        </a>
-                                    {% else %}
+                                        <!--  {% if course.type == 'video' %}
+     <a href="/watch_video/{{ course.filename }}" class="action-link" target="_blank">▶️ Watch Video</a> -->
+<!-- {% else %}
+    <a href="/download_material/{{ course.type }}/{{ course.filename }}" class="action-link" target="_blank">📎 View File</a>
+{% endif %} -->
+{% if course.type == 'video' %}
+    <a href="/video/{{ course.filename }}" class="action-link" target="_blank">▶️ Watch Video</a>
+{% else %}
+    <a href="/download_material/{{ course.type }}/{{ course.filename }}" class="action-link" target="_blank">📎 View File</a>
+{% endif %}
+
+                                    {% else %} 
                                         <span class="material-unavailable">No file</span>
                                     {% endif %}
                                 </td>
